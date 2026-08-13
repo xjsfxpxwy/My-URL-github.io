@@ -1,499 +1,1382 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Koder 3D 编辑器 · 稳定版</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>3D 代码实验室 · 几何体预览器</title>
     <style>
-        *{margin:0;padding:0;box-sizing:border-box;}
-        body{background:#0d1117;color:#e6e6e6;font-family:'Segoe UI','Microsoft YaHei',sans-serif;height:100vh;overflow:hidden;}
-        .app{height:100vh;position:relative;}
-        .preview-page{position:absolute;inset:0;display:flex;flex-direction:column;background:#1a1a2e;}
-        .preview-header{position:absolute;top:10px;right:10px;display:flex;gap:8px;z-index:20;}
-        .btn-icon{width:40px;height:40px;border-radius:50%;background:rgba(22,33,62,0.9);border:1px solid #0f3460;color:#4cc9f0;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-        .btn-icon:hover{background:#0f3460;}
-        .dropdown{position:absolute;top:55px;right:10px;background:#16213e;border-radius:8px;padding:8px;box-shadow:0 4px 12px rgba(0,0,0,0.5);display:none;flex-direction:column;min-width:140px;z-index:30;}
-        .dropdown.show{display:flex;}
-        .dropdown-item{padding:10px 15px;border-radius:4px;cursor:pointer;white-space:nowrap;}
-        .dropdown-item:hover{background:#0f3460;}
-        .dropdown-item.active{background:#4cc9f0;color:#16213e;font-weight:bold;}
-        .preview-wrapper{flex:1;display:flex;align-items:center;justify-content:center;padding:20px;overflow:auto;}
-        .preview-frame{border:none;background:white;box-shadow:0 8px 32px rgba(0,0,0,0.4);border-radius:4px;}
-        .dir-page{position:absolute;inset:0;background:#0d1117;display:none;flex-direction:column;z-index:20;}
-        .dir-header{display:flex;align-items:center;gap:12px;padding:15px 20px;background:#16213e;border-bottom:1px solid #0f3460;}
-        .dir-btn{background:#0f3460;color:white;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;border:none;font-size:0.9rem;}
-        .dir-btn:hover{background:#1a5a9c;}
-        .back-btn{background:transparent;color:#4cc9f0;border:1px solid #0f3460;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;}
-        .back-btn:hover{background:#0f3460;}
-        .file-list{flex:1;padding:20px;overflow-y:auto;}
-        .file-item{padding:15px;margin-bottom:8px;background:#161b22;border-radius:8px;border-left:4px solid #4cc9f0;cursor:pointer;display:flex;align-items:center;gap:12px;}
-        .file-item:hover{background:#1a2332;}
-        .file-icon{font-size:24px;}
-        .file-name{font-weight:bold;color:#4cc9f0;}
-        .file-path{font-size:0.85rem;color:#8b949e;}
-        .empty-msg{text-align:center;color:#6c757d;margin-top:60px;}
-        .empty-icon{font-size:48px;opacity:0.5;}
-        .add-menu{position:absolute;top:70px;right:20px;background:#16213e;border-radius:8px;padding:15px;box-shadow:0 4px 12px rgba(0,0,0,0.5);display:none;flex-direction:column;gap:10px;min-width:250px;max-height:400px;overflow-y:auto;z-index:30;}
-        .add-menu.show{display:flex;}
-        .menu-title{color:#4cc9f0;font-size:0.9rem;margin-bottom:8px;border-bottom:1px solid #0f3460;padding-bottom:5px;}
-        .menu-option{padding:10px 15px;border-radius:4px;cursor:pointer;display:flex;justify-content:space-between;}
-        .menu-option:hover{background:#0f3460;}
-        .added-mark{color:#4cc9f0;font-size:0.8rem;display:none;}
-        .source-page{position:absolute;inset:0;background:#0d1117;display:none;flex-direction:column;z-index:30;}
-        .source-header{display:flex;justify-content:space-between;align-items:center;padding:15px 20px;background:#16213e;border-bottom:1px solid #0f3460;}
-        .source-title{color:#4cc9f0;font-size:1.2rem;font-weight:bold;}
-        .source-toolbar{display:flex;gap:10px;padding:12px 20px;background:#0d1117;border-bottom:1px solid #30363d;}
-        .tool-btn{padding:8px 15px;background:#0f3460;color:white;border:none;border-radius:4px;cursor:pointer;font-size:0.9rem;}
-        .tool-btn.copy{background:#238636;}
-        .tool-btn.delete{background:#da3633;}
-        .tool-btn.preview{background:#6f42c1;}
-        .code-editor{flex:1;padding:20px;display:flex;}
-        #sourceCode{width:100%;height:100%;background:#0d1117;color:#c9d1d9;border:1px solid #30363d;border-radius:8px;padding:15px;font-family:'Consolas','Monaco',monospace;font-size:14px;line-height:1.5;resize:none;outline:none;}
-        #sourceCode:focus{border-color:#4cc9f0;box-shadow:0 0 0 2px rgba(76,201,240,0.15);}
-        .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#238636;color:white;padding:12px 24px;border-radius:8px;z-index:999;font-weight:600;animation:fadeInOut 2s ease forwards;pointer-events:none;}
-        @keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(20px);}15%{opacity:1;transform:translateX(-50%) translateY(0);}85%{opacity:1;}100%{opacity:0;}}
-        .reset-btn{background:#da3633;color:white;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:0.8rem;margin-left:10px;}
-        .reset-btn:hover{background:#f85149;}
+        /* ========== 全局重置 & 主题 ========== */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        :root {
+            --bg-primary: #0b0e17;
+            --bg-secondary: #131a2b;
+            --bg-card: #1a2338;
+            --bg-hover: #25304a;
+            --border-color: #2a3a5c;
+            --text-primary: #e8edf5;
+            --text-secondary: #8899bb;
+            --accent: #4cc9f0;
+            --accent-dark: #3a9fc0;
+            --accent-glow: rgba(76, 201, 240, 0.25);
+            --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+            --font-sans: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            --radius: 10px;
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        html,
+        body {
+            height: 100%;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            overflow: hidden;
+        }
+
+        /* ========== 滚动条 ========== */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent);
+        }
+
+        /* ========== 应用容器 ========== */
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: var(--bg-primary);
+        }
+
+        /* ========== 顶栏 ========== */
+        .app-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 18px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 8px;
+            z-index: 10;
+            min-height: 52px;
+        }
+        .app-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: 0.5px;
+            user-select: none;
+        }
+        .app-brand .logo {
+            font-size: 1.5rem;
+        }
+        .app-brand .highlight {
+            color: var(--accent);
+        }
+        .app-brand .sub {
+            font-weight: 400;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            letter-spacing: 0;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            white-space: nowrap;
+            font-family: var(--font-sans);
+            border: 1px solid transparent;
+        }
+        .btn:hover {
+            background: var(--bg-hover);
+            transform: translateY(-1px);
+        }
+        .btn:active {
+            transform: scale(0.97);
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #0b0e17;
+        }
+        .btn-primary:hover {
+            background: var(--accent-dark);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+        .btn-outline {
+            background: transparent;
+            border-color: var(--border-color);
+        }
+        .btn-outline:hover {
+            border-color: var(--accent);
+            background: var(--bg-card);
+        }
+        .btn-icon {
+            padding: 6px 10px;
+            font-size: 1rem;
+        }
+        .btn-danger {
+            color: #ff6b6b;
+        }
+        .btn-danger:hover {
+            background: #2a1a1a;
+            border-color: #ff6b6b;
+        }
+        .btn-sm {
+            padding: 4px 10px;
+            font-size: 0.75rem;
+        }
+
+        /* ========== 主体：左右分栏 ========== */
+        .app-main {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* ----- 左侧：文件树 + 编辑器 ----- */
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            width: 50%;
+            min-width: 320px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            overflow: hidden;
+            transition: width var(--transition);
+        }
+        .left-panel.collapsed {
+            width: 0;
+            min-width: 0;
+            border-right: none;
+        }
+
+        /* 文件树 */
+        .file-tree {
+            display: flex;
+            flex-direction: column;
+            flex-shrink: 0;
+            padding: 8px 12px;
+            background: var(--bg-primary);
+            border-bottom: 1px solid var(--border-color);
+            gap: 4px;
+            max-height: 160px;
+            overflow-y: auto;
+        }
+        .file-tree-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            padding: 2px 4px;
+        }
+        .file-tree-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .file-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px 4px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: var(--transition);
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid transparent;
+            font-family: var(--font-mono);
+        }
+        .file-tab:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+        .file-tab.active {
+            background: var(--bg-card);
+            color: var(--accent);
+            border-color: var(--accent);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+        .file-tab .close-btn {
+            font-size: 0.7rem;
+            opacity: 0.4;
+            transition: var(--transition);
+            cursor: pointer;
+            margin-left: 2px;
+            background: none;
+            border: none;
+            color: inherit;
+        }
+        .file-tab .close-btn:hover {
+            opacity: 1;
+            color: #ff6b6b;
+        }
+        .file-tab .icon {
+            font-size: 0.85rem;
+        }
+
+        /* 代码编辑器 */
+        .editor-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+        .editor-wrap textarea {
+            flex: 1;
+            width: 100%;
+            padding: 16px 18px;
+            background: var(--bg-primary);
+            color: #d4e0f0;
+            border: none;
+            outline: none;
+            resize: none;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            line-height: 1.7;
+            tab-size: 2;
+            letter-spacing: 0.2px;
+        }
+        .editor-wrap textarea::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.5;
+        }
+        .editor-status {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 16px;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            background: var(--bg-primary);
+            border-top: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .editor-status .lang {
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        /* ----- 右侧：3D 预览 ----- */
+        .right-panel {
+            flex: 1;
+            background: var(--bg-primary);
+            position: relative;
+            overflow: hidden;
+            min-width: 0;
+        }
+        .right-panel iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: #0b0e17;
+            display: block;
+        }
+
+        /* 预览浮层控制 */
+        .preview-overlay {
+            position: absolute;
+            bottom: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            background: rgba(11, 14, 23, 0.85);
+            padding: 6px 14px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            backdrop-filter: blur(12px);
+            pointer-events: none;
+            opacity: 0;
+            transition: var(--transition);
+        }
+        .right-panel:hover .preview-overlay {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .preview-overlay .btn {
+            pointer-events: auto;
+            padding: 4px 12px;
+            font-size: 0.7rem;
+        }
+
+        /* ========== 响应式 ========== */
+        @media (max-width: 900px) {
+            .left-panel {
+                width: 100%;
+                min-width: unset;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+                max-height: 55vh;
+            }
+            .left-panel.collapsed {
+                max-height: 0;
+                overflow: hidden;
+            }
+            .app-main {
+                flex-direction: column;
+            }
+            .right-panel {
+                flex: 1;
+                min-height: 0;
+            }
+            .app-brand .sub {
+                display: none;
+            }
+            .file-tree {
+                max-height: 100px;
+            }
+        }
+        @media (max-width: 600px) {
+            .app-header {
+                padding: 6px 10px;
+            }
+            .app-brand {
+                font-size: 0.9rem;
+            }
+            .btn {
+                padding: 4px 10px;
+                font-size: 0.7rem;
+            }
+            .file-tab {
+                font-size: 0.7rem;
+                padding: 3px 8px;
+            }
+            .editor-wrap textarea {
+                font-size: 12px;
+                padding: 12px;
+            }
+        }
+
+        /* ========== Toast ========== */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 28px;
+            border-radius: 10px;
+            background: #1a2338;
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+            font-weight: 500;
+            font-size: 0.9rem;
+            z-index: 999;
+            animation: toastIn 0.3s ease, toastOut 0.4s ease 1.8s forwards;
+            backdrop-filter: blur(12px);
+            pointer-events: none;
+            max-width: 90vw;
+        }
+        .toast.success {
+            border-color: #4cc9f0;
+        }
+        .toast.error {
+            border-color: #ff6b6b;
+        }
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        @keyframes toastOut {
+            from {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateX(-50%) translateY(10px);
+            }
+        }
+
+        /* ========== 模态框 ========== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            animation: fadeIn 0.2s ease;
+        }
+        .modal {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius);
+            padding: 28px 32px;
+            max-width: 440px;
+            width: 92%;
+            box-shadow: var(--shadow);
+            animation: scaleIn 0.25s ease;
+        }
+        .modal h3 {
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            color: var(--accent);
+        }
+        .modal p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+        .modal input[type="text"] {
+            width: 100%;
+            padding: 10px 14px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            outline: none;
+            font-family: var(--font-mono);
+            margin-bottom: 16px;
+            transition: var(--transition);
+        }
+        .modal input[type="text"]:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 16px var(--accent-glow);
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.92);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        /* 空状态 */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 20px;
+        }
+        .empty-state .big-icon {
+            font-size: 48px;
+            margin-bottom: 12px;
+            opacity: 0.4;
+        }
+        .empty-state h4 {
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        .empty-state p {
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
     </style>
 </head>
 <body>
-<div class="app">
-    <div class="preview-page" id="previewPage">
-        <div class="preview-header">
-            <div class="btn-icon" id="deviceBtn" title="设备切换">📱</div>
-            <div class="btn-icon" id="dirBtn" title="文件目录">📂</div>
-            <div class="dropdown" id="deviceMenu">
-                <div class="dropdown-item active" data-device="mobile">📱 手机</div>
-                <div class="dropdown-item" data-device="tablet">📋 平板</div>
-                <div class="dropdown-item" data-device="desktop">🖥️ 桌面</div>
+
+    <div class="app" id="app">
+        <!-- ===== 顶栏 ===== -->
+        <header class="app-header">
+            <div class="app-brand">
+                <span class="logo">🧊</span>
+                <span>3D <span class="highlight">Code</span> Lab</span>
+                <span class="sub">· 几何体预览器</span>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary btn-sm" id="btnNewFile">➕ 新建</button>
+                <button class="btn btn-outline btn-sm" id="btnTemplate">🎨 模板</button>
+                <button class="btn btn-outline btn-sm" id="btnTogglePanel">📐 切换面板</button>
+                <button class="btn btn-outline btn-sm" id="btnExport">📦 导出</button>
+                <button class="btn btn-outline btn-sm btn-danger" id="btnDeleteFile">🗑️</button>
+            </div>
+        </header>
+
+        <!-- ===== 主体 ===== -->
+        <div class="app-main">
+
+            <!-- 左侧：文件树 + 编辑器 -->
+            <div class="left-panel" id="leftPanel">
+                <!-- 文件树 -->
+                <div class="file-tree" id="fileTree">
+                    <div class="file-tree-header">
+                        <span>📁 文件</span>
+                        <span id="fileCount">0</span>
+                    </div>
+                    <div class="file-tree-list" id="fileList"></div>
+                </div>
+                <!-- 编辑器 -->
+                <div class="editor-wrap">
+                    <textarea id="codeEditor" spellcheck="false" placeholder="在此编写代码…"></textarea>
+                    <div class="editor-status">
+                        <span id="editorFileInfo">未选择文件</span>
+                        <span class="lang" id="editorLang">HTML</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：3D 预览 -->
+            <div class="right-panel" id="rightPanel">
+                <iframe id="previewFrame" title="3D 预览"></iframe>
+                <div class="preview-overlay">
+                    <button class="btn btn-sm btn-outline" id="btnRefresh">🔄 刷新</button>
+                    <button class="btn btn-sm btn-outline" id="btnAutoRun" style="border-color:var(--accent);">▶ 自动</button>
+                </div>
             </div>
         </div>
-        <div class="preview-wrapper">
-            <iframe id="previewFrame" class="preview-frame"></iframe>
-        </div>
     </div>
 
-    <div class="dir-page" id="dirPage">
-        <div class="dir-header">
-            <button class="dir-btn" id="newFileBtn">➕ 新建文件</button>
-            <button class="btn-icon" id="addFileBtn" title="模板添加">📋</button>
-            <button class="back-btn" id="backToPreviewBtn">⬅️ 返回预览</button>
-            <button class="reset-btn" id="resetAllBtn">🗑️ 重置全部</button>
-        </div>
-        <div class="file-list" id="fileList">
-            <div class="empty-msg"><div class="empty-icon">📁</div><p>暂无文件</p><p style="font-size:0.85rem;">点击 📋 添加模板</p></div>
-        </div>
-        <div class="add-menu" id="addFileMenu">
-            <div class="menu-title">🌐 HTML</div>
-            <div class="menu-option" data-file="index.html"><span>index.html</span><span class="added-mark">✓ 已添加</span></div>
-            <div class="menu-title">🎨 CSS</div>
-            <div class="menu-option" data-file="style.css"><span>style.css</span><span class="added-mark">✓ 已添加</span></div>
-            <div class="menu-title">⚡ JavaScript</div>
-            <div class="menu-option" data-file="script.js"><span>script.js</span><span class="added-mark">✓ 已添加</span></div>
-            <div class="menu-title">🧊 3D 模板</div>
-            <div class="menu-option" data-file="threejs-starter.html"><span>3D 基础项目</span><span class="added-mark">✓ 已添加</span></div>
-            <div class="menu-option" data-file="threejs-effectcomposer.html"><span>3D 后处理项目</span><span class="added-mark">✓ 已添加</span></div>
-        </div>
+    <!-- ===== 模板菜单（隐藏） ===== -->
+    <div style="display:none;" id="templateData">
+        <template id="tmpl-cube">
+            <!DOCTYPE html>
+            <html lang="zh-CN">
+            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>立方体</title>
+            <style>body{margin:0;overflow:hidden;background:#0b0e17;}</style>
+            </head>
+            <body>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
+            <script>
+                const scene=new THREE.Scene();
+                const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,100);
+                camera.position.set(3,2,5);
+                const renderer=new THREE.WebGLRenderer({antialias:true});
+                renderer.setSize(innerWidth,innerHeight);
+                renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+                document.body.appendChild(renderer.domElement);
+                const geo=new THREE.BoxGeometry(1.6,1.6,1.6);
+                const mat=new THREE.MeshStandardMaterial({color:0x4cc9f0,roughness:0.3,metalness:0.1});
+                const mesh=new THREE.Mesh(geo,mat);
+                scene.add(mesh);
+                const ambient=new THREE.AmbientLight(0x404060);
+                scene.add(ambient);
+                const dir=new THREE.DirectionalLight(0xffffff,2);
+                dir.position.set(2,5,3);
+                scene.add(dir);
+                function animate(){
+                    requestAnimationFrame(animate);
+                    mesh.rotation.x+=0.005;
+                    mesh.rotation.y+=0.01;
+                    renderer.render(scene,camera);
+                }
+                animate();
+                addEventListener('resize',()=>{
+                    camera.aspect=innerWidth/innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(innerWidth,innerHeight);
+                });
+            <\/script>
+            </body>
+            </html>
+        </template>
+        <template id="tmpl-sphere">
+            <!DOCTYPE html>
+            <html lang="zh-CN">
+            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>球体</title>
+            <style>body{margin:0;overflow:hidden;background:#0b0e17;}</style>
+            </head>
+            <body>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
+            <script>
+                const scene=new THREE.Scene();
+                const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,100);
+                camera.position.set(3,2,5);
+                const renderer=new THREE.WebGLRenderer({antialias:true});
+                renderer.setSize(innerWidth,innerHeight);
+                renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+                document.body.appendChild(renderer.domElement);
+                const geo=new THREE.SphereGeometry(1.2,48,48);
+                const mat=new THREE.MeshStandardMaterial({color:0xf72585,roughness:0.2,metalness:0.3});
+                const mesh=new THREE.Mesh(geo,mat);
+                scene.add(mesh);
+                const ambient=new THREE.AmbientLight(0x404060);
+                scene.add(ambient);
+                const dir=new THREE.DirectionalLight(0xffffff,2);
+                dir.position.set(2,5,3);
+                scene.add(dir);
+                function animate(){
+                    requestAnimationFrame(animate);
+                    mesh.rotation.x+=0.005;
+                    mesh.rotation.y+=0.012;
+                    renderer.render(scene,camera);
+                }
+                animate();
+                addEventListener('resize',()=>{
+                    camera.aspect=innerWidth/innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(innerWidth,innerHeight);
+                });
+            <\/script>
+            </body>
+            </html>
+        </template>
+        <template id="tmpl-torus">
+            <!DOCTYPE html>
+            <html lang="zh-CN">
+            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>环面</title>
+            <style>body{margin:0;overflow:hidden;background:#0b0e17;}</style>
+            </head>
+            <body>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
+            <script>
+                const scene=new THREE.Scene();
+                const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,100);
+                camera.position.set(4,2,5);
+                const renderer=new THREE.WebGLRenderer({antialias:true});
+                renderer.setSize(innerWidth,innerHeight);
+                renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+                document.body.appendChild(renderer.domElement);
+                const geo=new THREE.TorusGeometry(1.2,0.4,32,48);
+                const mat=new THREE.MeshStandardMaterial({color:0x4cc9f0,roughness:0.25,metalness:0.4,emissive:0x4cc9f0,emissiveIntensity:0.08});
+                const mesh=new THREE.Mesh(geo,mat);
+                scene.add(mesh);
+                const ambient=new THREE.AmbientLight(0x404060);
+                scene.add(ambient);
+                const dir=new THREE.DirectionalLight(0xffffff,2);
+                dir.position.set(2,5,3);
+                scene.add(dir);
+                function animate(){
+                    requestAnimationFrame(animate);
+                    mesh.rotation.x+=0.008;
+                    mesh.rotation.y+=0.015;
+                    renderer.render(scene,camera);
+                }
+                animate();
+                addEventListener('resize',()=>{
+                    camera.aspect=innerWidth/innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(innerWidth,innerHeight);
+                });
+            <\/script>
+            </body>
+            </html>
+        </template>
+        <template id="tmpl-cone">
+            <!DOCTYPE html>
+            <html lang="zh-CN">
+            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>圆锥</title>
+            <style>body{margin:0;overflow:hidden;background:#0b0e17;}</style>
+            </head>
+            <body>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
+            <script>
+                const scene=new THREE.Scene();
+                const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,100);
+                camera.position.set(4,2.5,5);
+                const renderer=new THREE.WebGLRenderer({antialias:true});
+                renderer.setSize(innerWidth,innerHeight);
+                renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+                document.body.appendChild(renderer.domElement);
+                const geo=new THREE.ConeGeometry(1.3,2.2,48);
+                const mat=new THREE.MeshStandardMaterial({color:0xf9c74f,roughness:0.3,metalness:0.1});
+                const mesh=new THREE.Mesh(geo,mat);
+                scene.add(mesh);
+                const ambient=new THREE.AmbientLight(0x404060);
+                scene.add(ambient);
+                const dir=new THREE.DirectionalLight(0xffffff,2);
+                dir.position.set(2,5,3);
+                scene.add(dir);
+                function animate(){
+                    requestAnimationFrame(animate);
+                    mesh.rotation.x+=0.005;
+                    mesh.rotation.y+=0.012;
+                    renderer.render(scene,camera);
+                }
+                animate();
+                addEventListener('resize',()=>{
+                    camera.aspect=innerWidth/innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(innerWidth,innerHeight);
+                });
+            <\/script>
+            </body>
+            </html>
+        </template>
+        <template id="tmpl-cylinder">
+            <!DOCTYPE html>
+            <html lang="zh-CN">
+            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>圆柱</title>
+            <style>body{margin:0;overflow:hidden;background:#0b0e17;}</style>
+            </head>
+            <body>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
+            <script>
+                const scene=new THREE.Scene();
+                const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,100);
+                camera.position.set(4,2.5,5);
+                const renderer=new THREE.WebGLRenderer({antialias:true});
+                renderer.setSize(innerWidth,innerHeight);
+                renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+                document.body.appendChild(renderer.domElement);
+                const geo=new THREE.CylinderGeometry(1.2,1.2,2,48);
+                const mat=new THREE.MeshStandardMaterial({color:0x7209b7,roughness:0.25,metalness:0.2});
+                const mesh=new THREE.Mesh(geo,mat);
+                scene.add(mesh);
+                const ambient=new THREE.AmbientLight(0x404060);
+                scene.add(ambient);
+                const dir=new THREE.DirectionalLight(0xffffff,2);
+                dir.position.set(2,5,3);
+                scene.add(dir);
+                function animate(){
+                    requestAnimationFrame(animate);
+                    mesh.rotation.x+=0.005;
+                    mesh.rotation.y+=0.012;
+                    renderer.render(scene,camera);
+                }
+                animate();
+                addEventListener('resize',()=>{
+                    camera.aspect=innerWidth/innerHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(innerWidth,innerHeight);
+                });
+            <\/script>
+            </body>
+            </html>
+        </template>
     </div>
 
-    <div class="source-page" id="sourcePage">
-        <div class="source-header">
-            <span class="source-title" id="sourceTitle">源代码</span>
-            <button class="back-btn" id="backToDirBtn">⬅️ 返回目录</button>
-        </div>
-        <div class="source-toolbar">
-            <button class="tool-btn copy" id="copyBtn">📋 复制</button>
-            <button class="tool-btn" id="pasteBtn">📥 粘贴</button>
-            <button class="tool-btn preview" id="previewFileBtn">👁️ 预览此文件</button>
-            <button class="tool-btn delete" id="deleteBtn">🗑️ 删除</button>
-        </div>
-        <div class="code-editor">
-            <textarea id="sourceCode" placeholder="在此编写代码..." spellcheck="false"></textarea>
-        </div>
-    </div>
-</div>
+    <script>
+        (() => {
+            'use strict';
 
-<script>
-(function() {
-    'use strict';
-    var STORAGE_KEY = 'koder_stable_v1';
-    function save(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
-    function load() {
-        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) { return {}; }
-    }
+            // ============================================================
+            //  1. 核心状态
+            // ============================================================
+            const STORAGE_KEY = '3d_code_lab_files';
+            let files = {};
+            let currentFile = null;
+            let autoRun = true;
+            let previewTimeout = null;
 
-    var files = load();
-    var currentFile = null;
-    var device = 'mobile';
-    var previewFile = 'index.html'; // 当前预览的HTML文件
+            // DOM 引用
+            const $ = id => document.getElementById(id);
+            const codeEditor = $('codeEditor');
+            const fileList = $('fileList');
+            const fileCount = $('fileCount');
+            const editorFileInfo = $('editorFileInfo');
+            const editorLang = $('editorLang');
+            const previewFrame = $('previewFrame');
+            const leftPanel = $('leftPanel');
+            const btnNewFile = $('btnNewFile');
+            const btnTemplate = $('btnTemplate');
+            const btnTogglePanel = $('btnTogglePanel');
+            const btnExport = $('btnExport');
+            const btnDeleteFile = $('btnDeleteFile');
+            const btnRefresh = $('btnRefresh');
+            const btnAutoRun = $('btnAutoRun');
 
-    function $(id) { return document.getElementById(id); }
-    var previewPage = $('previewPage');
-    var dirPage = $('dirPage');
-    var sourcePage = $('sourcePage');
-    var deviceBtn = $('deviceBtn');
-    var dirBtn = $('dirBtn');
-    var backToPreviewBtn = $('backToPreviewBtn');
-    var backToDirBtn = $('backToDirBtn');
-    var deviceMenu = $('deviceMenu');
-    var addFileBtn = $('addFileBtn');
-    var addFileMenu = $('addFileMenu');
-    var fileList = $('fileList');
-    var newFileBtn = $('newFileBtn');
-    var sourceCode = $('sourceCode');
-    var sourceTitle = $('sourceTitle');
-    var previewFrame = $('previewFrame');
-    var copyBtn = $('copyBtn');
-    var pasteBtn = $('pasteBtn');
-    var deleteBtn = $('deleteBtn');
-    var resetAllBtn = $('resetAllBtn');
-    var previewFileBtn = $('previewFileBtn');
-    var deviceItems = document.querySelectorAll('.dropdown-item[data-device]');
-    var menuOptions = document.querySelectorAll('.menu-option[data-file]');
+            // ============================================================
+            //  2. 存储
+            // ============================================================
+            const save = () => {
+                try { localStorage.setItem(STORAGE_KEY, JSON.stringify(files)); }
+                catch { showToast('⚠️ 存储空间不足', 'error'); }
+            };
+            const load = () => {
+                try {
+                    const d = localStorage.getItem(STORAGE_KEY);
+                    return d ? JSON.parse(d) : null;
+                } catch { return null; }
+            };
 
-    function toast(msg) {
-        var old = document.querySelector('.toast');
-        if (old) old.remove();
-        var t = document.createElement('div');
-        t.className = 'toast';
-        t.textContent = msg;
-        document.body.appendChild(t);
-        setTimeout(function() { t.remove(); }, 2000);
-    }
-    function getIcon(name) {
-        var ext = name.split('.').pop().toLowerCase();
-        return { html:'🌐', css:'🎨', js:'⚡', json:'📋', md:'📝', svg:'🖼️' }[ext] || '📄';
-    }
-    function esc(str) {
-        var d = document.createElement('div');
-        d.textContent = str;
-        return d.innerHTML;
-    }
+            // ============================================================
+            //  3. Toast
+            // ============================================================
+            let toastTimer = null;
 
-    function showPreview() {
-        previewPage.style.display = 'flex';
-        dirPage.style.display = 'none';
-        sourcePage.style.display = 'none';
-        closeMenus();
-        buildPreview();
-    }
-    function showDir() {
-        previewPage.style.display = 'none';
-        dirPage.style.display = 'flex';
-        sourcePage.style.display = 'none';
-        closeMenus();
-        renderFileList();
-    }
-    function showSource(fileName) {
-        currentFile = fileName;
-        previewPage.style.display = 'none';
-        dirPage.style.display = 'none';
-        sourcePage.style.display = 'flex';
-        closeMenus();
-        sourceTitle.textContent = '📝 ' + fileName;
-        sourceCode.value = files[fileName] || '';
-        sourceCode.focus();
-    }
+            function showToast(msg, type = 'success') {
+                const old = document.querySelector('.toast');
+                if (old) old.remove();
+                if (toastTimer) clearTimeout(toastTimer);
+                const el = document.createElement('div');
+                el.className = `toast ${type}`;
+                el.textContent = msg;
+                document.body.appendChild(el);
+                toastTimer = setTimeout(() => { if (el.parentNode) el.remove(); }, 2200);
+            }
 
-    function closeMenus() {
-        deviceMenu.classList.remove('show');
-        addFileMenu.classList.remove('show');
-    }
-    function toggleMenu(menu) {
-        var isOpen = menu.classList.contains('show');
-        closeMenus();
-        if (!isOpen) menu.classList.add('show');
-    }
+            // ============================================================
+            //  4. 文件管理
+            // ============================================================
+            function getExt(name) {
+                const i = name.lastIndexOf('.');
+                return i > 0 ? name.slice(i + 1).toLowerCase() : '';
+            }
 
-    function setDevice(mode) {
-        device = mode;
-        deviceItems.forEach(function(el) { el.classList.toggle('active', el.dataset.device === mode); });
-        var frame = previewFrame;
-        if (mode === 'mobile') { frame.style.width = '375px'; frame.style.height = '667px'; }
-        else if (mode === 'tablet') { frame.style.width = '768px'; frame.style.height = '1024px'; }
-        else { frame.style.width = '100%'; frame.style.height = '100%'; }
-        buildPreview();
-    }
+            function getIcon(name) {
+                const e = getExt(name);
+                const map = { html: '🌐', htm: '🌐', css: '🎨', js: '⚡', json: '📋', md: '📝', txt: '📄' };
+                return map[e] || '📄';
+            }
 
-    function persist() { save(files); }
-    function addFile(fileName) {
-        if (files[fileName]) { toast('"' + fileName + '" 已存在'); return false; }
-        var content = getDefaultContent(fileName);
-        if (content === undefined) {
-            toast('无法创建文件: ' + fileName);
-            return false;
+            function getLang(name) {
+                const e = getExt(name);
+                const map = { html: 'HTML', htm: 'HTML', css: 'CSS', js: 'JavaScript', json: 'JSON', md: 'Markdown', txt: 'Text' };
+                return map[e] || 'Text';
+            }
+
+            function getDefaultContent(name) {
+                const ext = getExt(name);
+                if (ext === 'html' || ext === 'htm') {
+                    return `<!DOCTYPE html>
+        <html lang="zh-CN">
+        <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>我的3D场景</title>
+        <style>body{margin:0;overflow:hidden;background:#0b0e17;}</style>
+        </head>
+        <body>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
+        <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(50, innerWidth/innerHeight, 0.1, 100);
+        camera.position.set(3, 2, 5);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(innerWidth, innerHeight);
+        renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+        document.body.appendChild(renderer.domElement);
+        // --- 几何体 ---
+        const geo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+        const mat = new THREE.MeshStandardMaterial({ color: 0x4cc9f0, roughness: 0.3, metalness: 0.1 });
+        const mesh = new THREE.Mesh(geo, mat);
+        scene.add(mesh);
+        // --- 灯光 ---
+        scene.add(new THREE.AmbientLight(0x404060));
+        const dir = new THREE.DirectionalLight(0xffffff, 2);
+        dir.position.set(2, 5, 3);
+        scene.add(dir);
+        // --- 动画 ---
+        function animate() {
+            requestAnimationFrame(animate);
+            mesh.rotation.x += 0.005;
+            mesh.rotation.y += 0.01;
+            renderer.render(scene, camera);
         }
-        files[fileName] = content;
-        persist();
-        renderFileList();
-        updateAddedMarks();
-        buildPreview();
-        toast('已添加: ' + fileName);
-        return true;
-    }
-    function deleteFile(fileName) {
-        delete files[fileName];
-        if (currentFile === fileName) currentFile = null;
-        if (previewFile === fileName) previewFile = 'index.html';
-        persist();
-        renderFileList();
-        updateAddedMarks();
-        buildPreview();
-    }
-    function updateAddedMarks() {
-        menuOptions.forEach(function(opt) {
-            var mark = opt.querySelector('.added-mark');
-            if (mark) mark.style.display = files[opt.dataset.file] ? 'inline' : 'none';
+        animate();
+        addEventListener('resize', () => {
+            camera.aspect = innerWidth / innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(innerWidth, innerHeight);
         });
-    }
-    function renderFileList() {
-        var names = Object.keys(files).sort();
-        if (names.length === 0) {
-            fileList.innerHTML = '<div class="empty-msg"><div class="empty-icon">📁</div><p>暂无文件</p><p style="font-size:0.85rem;">点击 📋 添加模板</p></div>';
-            return;
-        }
-        var html = '';
-        for (var i = 0; i < names.length; i++) {
-            var name = names[i];
-            html += '<div class="file-item" data-file="' + esc(name) + '">' +
-                '<span class="file-icon">' + getIcon(name) + '</span>' +
-                '<div><div class="file-name">' + esc(name) + '</div><div class="file-path">/' + esc(name) + '</div></div></div>';
-        }
-        fileList.innerHTML = html;
-        // 使用事件委托（父元素监听）
-        fileList.onclick = function(e) {
-            var item = e.target.closest('.file-item');
-            if (item) {
-                showSource(item.dataset.file);
+        console.log('🚀 3D场景已启动！');
+        <\/script>
+        </body>
+        </html>`;
+                }
+                if (ext === 'css') {
+                    return `/* 样式表 */\nbody { font-family: Arial; }`;
+                }
+                if (ext === 'js') {
+                    return `// JavaScript\nconsole.log('Hello from 3D Lab!');`;
+                }
+                return `// ${name}`;
             }
-        };
-    }
-    function syncCurrent() {
-        if (currentFile && files[currentFile] !== undefined) {
-            files[currentFile] = sourceCode.value;
-            persist();
-            buildPreview();
-        }
-    }
 
-    function resetAll() {
-        if (confirm('确定要清空所有文件并恢复默认模板吗？此操作不可撤销。')) {
-            localStorage.removeItem(STORAGE_KEY);
-            location.reload();
-        }
-    }
-
-    // ========== 核心：预览生成 ==========
-    function buildPreview() {
-        var htmlContent = files[previewFile] || files['index.html'] || '';
-        if (!htmlContent) {
-            var htmlFiles = Object.keys(files).filter(function(f) { return f.endsWith('.html') || f.endsWith('.htm'); });
-            if (htmlFiles.length > 0) htmlContent = files[htmlFiles[0]];
-        }
-
-        var threeCDN = 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js';
-        var needThree = false;
-        var fileNames = Object.keys(files);
-        for (var i = 0; i < fileNames.length; i++) {
-            var c = files[fileNames[i]];
-            if (typeof c === 'string' && (c.indexOf('THREE.') !== -1 || c.indexOf('new THREE.') !== -1 || c.indexOf('import * as THREE') !== -1)) {
-                needThree = true;
-                break;
+            function addFile(name, content) {
+                if (files[name]) { showToast(`文件 "${name}" 已存在`, 'error'); return false; }
+                files[name] = content || getDefaultContent(name);
+                save();
+                renderFileList();
+                selectFile(name);
+                showToast(`✅ 已创建: ${name}`);
+                return true;
             }
-        }
 
-        var usesModules = false;
-        if (htmlContent) {
-            usesModules = /<script[^>]*type=["']module["'][^>]*>/i.test(htmlContent) ||
-                          /<script[^>]*type=["']importmap["'][^>]*>/i.test(htmlContent) ||
-                          /import\s+.*from\s+['"]three['"]/i.test(htmlContent);
-        }
-        var allJs = Object.keys(files).filter(function(f) { return f.endsWith('.js'); });
-        for (var k = 0; k < allJs.length; k++) {
-            if (/import\s+.*from\s+['"]three['"]/i.test(files[allJs[k]])) {
-                usesModules = true;
-                break;
+            function deleteFile(name) {
+                if (!files[name]) return;
+                if (Object.keys(files).length <= 1) {
+                    showToast('至少保留一个文件', 'error');
+                    return;
+                }
+                delete files[name];
+                save();
+                if (currentFile === name) {
+                    const keys = Object.keys(files);
+                    selectFile(keys[0] || null);
+                } else {
+                    renderFileList();
+                }
+                showToast(`🗑️ 已删除: ${name}`);
             }
-        }
 
-        if (needThree && !usesModules && htmlContent && htmlContent.indexOf(threeCDN) === -1) {
-            var scriptTag = '<script src="' + threeCDN + '"><\/script>';
-            if (htmlContent.indexOf('</head>') !== -1) htmlContent = htmlContent.replace('</head>', scriptTag + '\n</head>');
-            else if (htmlContent.indexOf('<body') !== -1) htmlContent = htmlContent.replace('<body', scriptTag + '\n<body');
-            else htmlContent = scriptTag + '\n' + htmlContent;
-        }
-
-        var cssFiles = Object.keys(files).filter(function(f) { return f.endsWith('.css'); });
-        cssFiles.sort(function(a,b) { return a === 'style.css' ? -1 : b === 'style.css' ? 1 : 0; });
-        var combinedCSS = '';
-        for (var cIdx = 0; cIdx < cssFiles.length; cIdx++) combinedCSS += files[cssFiles[cIdx]] + '\n';
-
-        var jsOrder = ['script.js'];
-        var orderMap = {};
-        for (var o = 0; o < jsOrder.length; o++) orderMap[jsOrder[o]] = o;
-        var jsFiles = Object.keys(files).filter(function(f) { return f.endsWith('.js'); });
-        jsFiles.sort(function(a,b) {
-            var ia = orderMap[a] !== undefined ? orderMap[a] : 9999;
-            var ib = orderMap[b] !== undefined ? orderMap[b] : 9999;
-            return ia - ib || a.localeCompare(b);
-        });
-        var jsScripts = '';
-        if (!usesModules) {
-            for (var m = 0; m < jsFiles.length; m++) {
-                jsScripts += '<script>\n' + files[jsFiles[m]] + '\n<\/script>\n';
+            function selectFile(name) {
+                if (name && !files[name]) { name = null; }
+                currentFile = name;
+                if (name) {
+                    codeEditor.value = files[name];
+                    editorFileInfo.textContent = `📄 ${name}`;
+                    editorLang.textContent = getLang(name);
+                    codeEditor.dataset.file = name;
+                } else {
+                    codeEditor.value = '';
+                    editorFileInfo.textContent = '未选择文件';
+                    editorLang.textContent = '—';
+                    codeEditor.dataset.file = '';
+                }
+                renderFileList();
+                updatePreview();
             }
-        }
 
-        var finalHtml;
-        if (htmlContent.trim()) {
-            finalHtml = htmlContent;
-            if (combinedCSS.trim()) {
-                var styleBlock = '<style>\n' + combinedCSS + '\n</style>';
-                if (finalHtml.indexOf('</head>') !== -1) finalHtml = finalHtml.replace('</head>', styleBlock + '\n</head>');
-                else if (/<head[^>]*>/i.test(finalHtml)) finalHtml = finalHtml.replace(/(<head[^>]*>)/i, '$1\n' + styleBlock);
-                else finalHtml = styleBlock + '\n' + finalHtml;
+            function renderFileList() {
+                const names = Object.keys(files).sort();
+                fileList.innerHTML = '';
+                names.forEach(name => {
+                    const tab = document.createElement('span');
+                    tab.className = 'file-tab' + (name === currentFile ? ' active' : '');
+                    tab.innerHTML = `
+                        <span class="icon">${getIcon(name)}</span>
+                        <span>${name}</span>
+                        <button class="close-btn" data-name="${name}">✕</button>
+                    `;
+                    tab.addEventListener('click', (e) => {
+                        if (e.target.closest('.close-btn')) return;
+                        selectFile(name);
+                    });
+                    const closeBtn = tab.querySelector('.close-btn');
+                    closeBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteFile(name);
+                    });
+                    fileList.appendChild(tab);
+                });
+                fileCount.textContent = names.length;
+                if (!names.length) {
+                    fileList.innerHTML = '<span style="color:var(--text-secondary);font-size:0.75rem;padding:4px 0;">暂无文件，点击「新建」</span>';
+                }
             }
-            finalHtml = finalHtml.replace(/<script[^>]*src=["']script\.js["'][^>]*><\/script>/gi, '');
-            if (jsScripts.trim() && !usesModules) {
-                if (finalHtml.indexOf('</body>') !== -1) finalHtml = finalHtml.replace('</body>', jsScripts + '</body>');
-                else if (/<body[^>]*>/i.test(finalHtml)) finalHtml += '\n' + jsScripts;
-                else finalHtml += '\n' + jsScripts;
+
+            // ============================================================
+            //  5. 预览更新
+            // ============================================================
+            function updatePreview() {
+                if (previewTimeout) { clearTimeout(previewTimeout);
+                    previewTimeout = null; }
+                previewTimeout = setTimeout(() => {
+                    previewTimeout = null;
+                    _renderPreview();
+                }, 200);
             }
-        } else {
-            finalHtml = '<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>预览</title>\n';
-            if (needThree && !usesModules) finalHtml += '<script src="' + threeCDN + '"><\/script>\n';
-            if (combinedCSS.trim()) finalHtml += '<style>\n' + combinedCSS + '\n</style>\n';
-            finalHtml += '</head>\n<body>\n<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#f0f0f0;color:#333;font-family:sans-serif;">\n  <div style="text-align:center;"><div style="font-size:64px;">👋</div><h1>代码预览</h1><p>CSS/JS 已自动加载</p></div>\n</div>\n';
-            if (!usesModules) finalHtml += jsScripts;
-            finalHtml += '\n</body>\n</html>';
-        }
 
-        previewFrame.srcdoc = finalHtml;
-    }
+            function _renderPreview() {
+                // 找到当前选中的 HTML 文件（优先 index.html，否则选第一个 html）
+                let htmlName = currentFile && (getExt(currentFile) === 'html' || getExt(currentFile) === 'htm') ? currentFile : null;
+                if (!htmlName) {
+                    const candidates = Object.keys(files).filter(f => getExt(f) === 'html' || getExt(f) === 'htm');
+                    if (candidates.includes('index.html')) htmlName = 'index.html';
+                    else if (candidates.length) htmlName = candidates[0];
+                }
+                if (!htmlName || !files[htmlName]) {
+                    // 没有 HTML 文件：显示一个友好的 3D 占位
+                    const fallback = `<!DOCTYPE html>
+        <html lang="zh-CN">
+        <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>3D 预览</title>
+        <style>body{margin:0;overflow:hidden;background:#0b0e17;display:flex;align-items:center;justify-content:center;font-family:sans-serif;color:#8899bb;}</style>
+        </head>
+        <body>
+        <div style="text-align:center;padding:20px;">
+            <div style="font-size:48px;margin-bottom:12px;">🧊</div>
+            <h3 style="color:#e8edf5;">暂无 HTML 文件</h3>
+            <p style="font-size:0.9rem;">创建一个 .html 文件或从模板生成</p>
+        </div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>
+        <script>
+        // 背景 3D 装饰
+        const s=new THREE.Scene();
+        const c=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,100);
+        c.position.set(0,0,5);
+        const r=new THREE.WebGLRenderer({antialias:true,alpha:true});
+        r.setSize(innerWidth,innerHeight);
+        r.setPixelRatio(Math.min(devicePixelRatio,2));
+        document.body.prepend(r.domElement);
+        const g=new THREE.IcosahedronGeometry(1.2,1);
+        const m=new THREE.MeshStandardMaterial({color:0x4cc9f0,wireframe:true,transparent:true,opacity:0.3});
+        const mesh=new THREE.Mesh(g,m);
+        s.add(mesh);
+        s.add(new THREE.AmbientLight(0x404060));
+        const d=new THREE.DirectionalLight(0xffffff,1);
+        d.position.set(1,1,1);
+        s.add(d);
+        function anim(){requestAnimationFrame(anim);mesh.rotation.x+=0.003;mesh.rotation.y+=0.005;r.render(s,c);}
+        anim();
+        addEventListener('resize',()=>{c.aspect=innerWidth/innerHeight;c.updateProjectionMatrix();r.setSize(innerWidth,innerHeight);});
+        <\/script>
+        </body>
+        </html>`;
+                    previewFrame.srcdoc = fallback;
+                    return;
+                }
 
-    // ========== 默认内容 ==========
-    function getDefaultContent(fileName) {
-        var ext = fileName.split('.').pop().toLowerCase();
-        if (fileName === 'threejs-starter.html') {
-            return '<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>3D 基础场景</title>\n    <style>\n        body { margin: 0; overflow: hidden; }\n        canvas { display: block; }\n    </style>\n</head>\n<body>\n    <script>\n' +
-                '        const scene = new THREE.Scene();\n' +
-                '        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);\n' +
-                '        const renderer = new THREE.WebGLRenderer({ antialias: true });\n' +
-                '        renderer.setSize(window.innerWidth, window.innerHeight);\n' +
-                '        document.body.appendChild(renderer.domElement);\n' +
-                '        const geometry = new THREE.BoxGeometry(1, 1, 1);\n' +
-                '        const material = new THREE.MeshStandardMaterial({ color: 0x4cc9f0 });\n' +
-                '        const cube = new THREE.Mesh(geometry, material);\n' +
-                '        scene.add(cube);\n' +
-                '        const light = new THREE.DirectionalLight(0xffffff, 1);\n' +
-                '        light.position.set(1, 1, 1);\n' +
-                '        scene.add(light);\n' +
-                '        scene.add(new THREE.AmbientLight(0x404040));\n' +
-                '        camera.position.z = 3;\n' +
-                '        function animate() {\n' +
-                '            requestAnimationFrame(animate);\n' +
-                '            cube.rotation.x += 0.01;\n' +
-                '            cube.rotation.y += 0.01;\n' +
-                '            renderer.render(scene, camera);\n' +
-                '        }\n' +
-                '        animate();\n' +
-                '        window.addEventListener("resize", () => {\n' +
-                '            camera.aspect = window.innerWidth / window.innerHeight;\n' +
-                '            camera.updateProjectionMatrix();\n' +
-                '            renderer.setSize(window.innerWidth, window.innerHeight);\n' +
-                '        });\n' +
-                '    <\/script>\n</body>\n</html>';
-        }
-        if (fileName === 'threejs-effectcomposer.html') {
-            // 所有 </script> 均已转义
-            return '<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>3D 后处理场景</title>\n    <style>\n        body { margin: 0; overflow: hidden; background: #000; }\n        canvas { display: block; }\n        #info { position: absolute; top: 20px; left: 20px; color: #fff; font-family: monospace; }\n    </style>\n</head>\n<body>\n    <div id="info">Three.js + EffectComposer</div>\n    <script type="importmap">\n    {\n        "imports": {\n            "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",\n            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"\n        }\n    }\n    <\/script>\n    <script type="module">\n        import * as THREE from \'three\';\n        import { EffectComposer } from \'three/addons/postprocessing/EffectComposer.js\';\n        import { RenderPass } from \'three/addons/postprocessing/RenderPass.js\';\n        import { UnrealBloomPass } from \'three/addons/postprocessing/UnrealBloomPass.js\';\n\n        const scene = new THREE.Scene();\n        scene.background = new THREE.Color(0x0d0d1a);\n\n        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);\n        camera.position.z = 3;\n\n        const renderer = new THREE.WebGLRenderer({ antialias: true });\n        renderer.setSize(window.innerWidth, window.innerHeight);\n        renderer.setPixelRatio(window.devicePixelRatio);\n        document.body.appendChild(renderer.domElement);\n\n        const geometry = new THREE.BoxGeometry(1, 1, 1);\n        const material = new THREE.MeshStandardMaterial({ color: 0x4cc9f0, roughness: 0.3, metalness: 0.1 });\n        const cube = new THREE.Mesh(geometry, material);\n        scene.add(cube);\n\n        const dirLight = new THREE.DirectionalLight(0xffffff, 1);\n        dirLight.position.set(1, 2, 1);\n        scene.add(dirLight);\n        scene.add(new THREE.AmbientLight(0x404040));\n\n        const composer = new EffectComposer(renderer);\n        const renderPass = new RenderPass(scene, camera);\n        composer.addPass(renderPass);\n\n        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.5, 0.4, 0.85);\n        bloomPass.threshold = 0.1;\n        bloomPass.strength = 0.8;\n        bloomPass.radius = 0.5;\n        composer.addPass(bloomPass);\n\n        function animate() {\n            requestAnimationFrame(animate);\n            cube.rotation.x += 0.01;\n            cube.rotation.y += 0.01;\n            composer.render();\n        }\n        animate();\n\n        window.addEventListener(\'resize\', () => {\n            camera.aspect = window.innerWidth / window.innerHeight;\n            camera.updateProjectionMatrix();\n            renderer.setSize(window.innerWidth, window.innerHeight);\n            composer.setSize(window.innerWidth, window.innerHeight);\n        });\n    <\/script>\n</body>\n</html>';
-        }
-        if (ext === 'html') {
-            return '<!DOCTYPE html>\n<html lang="zh-CN">\n<head><meta charset="UTF-8"><title>我的网页</title></head>\n<body>\n  <h1>欢迎</h1>\n  <button id="myButton">点击我</button>\n</body>\n</html>';
-        }
-        if (ext === 'css') {
-            return 'body {\n  font-family: Arial;\n  margin: 0;\n  padding: 20px;\n  background: linear-gradient(135deg, #667eea, #764ba2);\n  color: white;\n  min-height: 100vh;\n}\nbutton {\n  padding: 12px 24px;\n  background: #4cc9f0;\n  border: none;\n  border-radius: 6px;\n  cursor: pointer;\n  font-weight: bold;\n}';
-        }
-        if (ext === 'js') {
-            if (fileName === 'script.js') {
-                return '// script.js\n// 您的 JavaScript 代码（3D 逻辑等）\nconsole.log("script.js 已加载");';
+                // 收集所有 CSS
+                const cssFiles = Object.keys(files).filter(f => getExt(f) === 'css').sort();
+                const combinedCSS = cssFiles.map(f => files[f]).join('\n');
+
+                // 收集所有 JS（非 HTML，非 CSS）
+                const jsFiles = Object.keys(files).filter(f => {
+                    const e = getExt(f);
+                    return e !== 'html' && e !== 'htm' && e !== 'css';
+                }).sort();
+
+                // 构建最终的 HTML
+                let html = files[htmlName];
+
+                // 注入 CSS
+                if (combinedCSS.trim()) {
+                    const block = `<style>\n${combinedCSS}\n</style>`;
+                    if (/<\/head>/i.test(html)) {
+                        html = html.replace(/<\/head>/i, block + '\n</head>');
+                    } else if (/<head[^>]*>/i.test(html)) {
+                        html = html.replace(/(<head[^>]*>)/i, '$1\n' + block);
+                    } else {
+                        html = block + '\n' + html;
+                    }
+                }
+
+                // 注入 JS (在 body 末尾)
+                if (jsFiles.length) {
+                    const jsBlock = jsFiles.map(f => `<script>\n${files[f]}\n<\/script>`).join('\n');
+                    if (/<\/body>/i.test(html)) {
+                        html = html.replace(/<\/body>/i, jsBlock + '\n</body>');
+                    } else {
+                        html += '\n' + jsBlock;
+                    }
+                }
+
+                // 确保 Three.js 存在（如果页面没有显式引用，自动注入）
+                if (!/three\.(min\.)?js/i.test(html) && !/import.*three/i.test(html)) {
+                    // 在 head 中注入 CDN
+                    const threeTag = `<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"><\/script>`;
+                    if (/<\/head>/i.test(html)) {
+                        html = html.replace(/<\/head>/i, threeTag + '\n</head>');
+                    } else {
+                        html = threeTag + '\n' + html;
+                    }
+                }
+
+                previewFrame.srcdoc = html;
             }
-            return '// ' + fileName + '\nconsole.log("' + fileName + ' 已加载");';
-        }
-        return '// ' + fileName;
-    }
 
-    // 剪贴板操作
-    function copyCode() {
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(sourceCode.value).then(function() { toast('✅ 已复制'); }).catch(function() {
-                sourceCode.select(); document.execCommand('copy'); toast('✅ 已复制');
+            // ============================================================
+            //  6. 模板系统
+            // ============================================================
+            const TEMPLATES = [
+                { id: 'cube', label: '🧊 立方体', file: 'cube.html' },
+                { id: 'sphere', label: '⚪ 球体', file: 'sphere.html' },
+                { id: 'torus', label: '🍩 环面', file: 'torus.html' },
+                { id: 'cone', label: '🔺 圆锥', file: 'cone.html' },
+                { id: 'cylinder', label: '🧴 圆柱', file: 'cylinder.html' },
+            ];
+
+            function showTemplateMenu() {
+                // 简单弹出选择
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+                overlay.innerHTML = `
+                    <div class="modal">
+                        <h3>🎨 选择模板</h3>
+                        <p style="margin-bottom:12px;">将创建新的 HTML 文件并自动打开</p>
+                        <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;">
+                            ${TEMPLATES.map(t => `
+                                <button class="btn btn-outline" data-tpl="${t.id}" style="justify-content:center;padding:10px;font-size:0.9rem;">
+                                    ${t.label}
+                                </button>
+                            `).join('')}
+                        </div>
+                        <div class="modal-actions">
+                            <button class="btn" id="tplCancel">取消</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+
+                overlay.querySelectorAll('[data-tpl]').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const id = btn.dataset.tpl;
+                        const tpl = TEMPLATES.find(t => t.id === id);
+                        if (!tpl) return;
+                        const el = document.getElementById(`tmpl-${id}`);
+                        if (!el) { showToast('模板不存在', 'error');
+                            return; }
+                        const content = el.innerHTML;
+                        const name = tpl.file;
+                        // 如果已存在，覆盖确认
+                        if (files[name]) {
+                            if (!confirm(`文件 "${name}" 已存在，是否覆盖？`)) {
+                                overlay.remove();
+                                return;
+                            }
+                        }
+                        files[name] = content;
+                        save();
+                        renderFileList();
+                        selectFile(name);
+                        showToast(`✅ 已应用模板: ${tpl.label}`);
+                        overlay.remove();
+                    });
+                });
+                overlay.querySelector('#tplCancel').addEventListener('click', () => overlay.remove());
+                overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+            }
+
+            // ============================================================
+            //  7. 导出
+            // ============================================================
+            function exportProject() {
+                const names = Object.keys(files).sort();
+                if (!names.length) { showToast('没有文件可导出', 'error'); return; }
+
+                // 打包为 zip？ 简单起见，导出当前预览的 HTML
+                let htmlName = currentFile && (getExt(currentFile) === 'html' || getExt(currentFile) === 'htm') ? currentFile : null;
+                if (!htmlName) {
+                    const candidates = Object.keys(files).filter(f => getExt(f) === 'html' || getExt(f) === 'htm');
+                    if (candidates.length) htmlName = candidates[0];
+                }
+                if (!htmlName || !files[htmlName]) {
+                    showToast('请选择一个 HTML 文件', 'error');
+                    return;
+                }
+
+                // 构建完整的独立 HTML（内联所有依赖）
+                let html = files[htmlName];
+                // 内联 CSS
+                const cssFiles = Object.keys(files).filter(f => getExt(f) === 'css').sort();
+                const combinedCSS = cssFiles.map(f => files[f]).join('\n');
+                if (combinedCSS.trim()) {
+                    const block = `<style>\n${combinedCSS}\n</style>`;
+                    if (/<\/head>/i.test(html)) {
+                        html = html.replace(/<\/head>/i, block + '\n</head>');
+                    } else if (/<head[^>]*>/i.test(html)) {
+                        html = html.replace(/(<head[^>]*>)/i, '$1\n' + block);
+                    } else {
+                        html = block + '\n' + html;
+                    }
+                }
+                // 内联 JS
+                const jsFiles = Object.keys(files).filter(f => {
+                    const e = getExt(f);
+                    return e !== 'html' && e !== 'htm' && e !== 'css';
+                }).sort();
+                if (jsFiles.length) {
+                    const jsBlock = jsFiles.map(f => `<script>\n${files[f]}\n<\/script>`).join('\n');
+                    if (/<\/body>/i.test(html)) {
+                        html = html.replace(/<\/body>/i, jsBlock + '\n</body>');
+                    } else {
+                        html += '\n' + jsBlock;
+                    }
+                }
+
+                // 下载
+                const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = htmlName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                showToast(`📦 已导出: ${htmlName}`);
+            }
+
+            // ============================================================
+            //  8. 事件绑定 & 初始化
+            // ============================================================
+            // 编辑器变化自动保存 + 预览
+            codeEditor.addEventListener('input', () => {
+                if (currentFile && files[currentFile]) {
+                    files[currentFile] = codeEditor.value;
+                    save();
+                    if (autoRun) updatePreview();
+                }
             });
-        } else {
-            sourceCode.select(); document.execCommand('copy'); toast('✅ 已复制');
-        }
-    }
-    function pasteCode() {
-        if (navigator.clipboard) {
-            navigator.clipboard.readText().then(function(text) {
-                sourceCode.value = text; syncCurrent(); toast('📥 已粘贴');
-            }).catch(function() {
-                toast('请手动粘贴 (Ctrl+V)'); sourceCode.focus();
+
+            // 快捷键：Ctrl+S 保存并刷新预览
+            codeEditor.addEventListener('keydown', (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                    e.preventDefault();
+                    if (currentFile && files[currentFile]) {
+                        files[currentFile] = codeEditor.value;
+                        save();
+                        updatePreview();
+                        showToast('💾 已保存并刷新');
+                    }
+                }
             });
-        } else {
-            toast('请手动粘贴 (Ctrl+V)'); sourceCode.focus();
-        }
-    }
 
-    // 事件绑定
-    deviceBtn.addEventListener('click', function(e) { e.stopPropagation(); toggleMenu(deviceMenu); });
-    addFileBtn.addEventListener('click', function(e) { e.stopPropagation(); updateAddedMarks(); toggleMenu(addFileMenu); });
-    dirBtn.addEventListener('click', showDir);
-    backToPreviewBtn.addEventListener('click', showPreview);
-    backToDirBtn.addEventListener('click', showDir);
-    resetAllBtn.addEventListener('click', resetAll);
-    deviceItems.forEach(function(item) { item.addEventListener('click', function() { setDevice(this.dataset.device); closeMenus(); }); });
-    menuOptions.forEach(function(opt) { opt.addEventListener('click', function() { addFile(this.dataset.file); closeMenus(); }); });
-    newFileBtn.addEventListener('click', function() { var name = prompt('输入文件名（含扩展名）：'); if (name && name.trim()) addFile(name.trim()); });
-    copyBtn.addEventListener('click', copyCode);
-    pasteBtn.addEventListener('click', pasteCode);
-    deleteBtn.addEventListener('click', function() {
-        if (!currentFile) { toast('没有选中文件'); return; }
-        if (confirm('确定删除 ' + currentFile + ' ？')) { deleteFile(currentFile); showDir(); toast('已删除: ' + currentFile); }
-    });
-    previewFileBtn.addEventListener('click', function() {
-        if (!currentFile) { toast('没有选中文件'); return; }
-        if (!/\.(html?|htm)$/i.test(currentFile)) { toast('请选择 HTML 文件进行预览'); return; }
-        previewFile = currentFile;
-        toast('正在预览: ' + previewFile);
-        showPreview();
-    });
-    sourceCode.addEventListener('input', syncCurrent);
-    sourceCode.addEventListener('keydown', function(e) {
-        if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); syncCurrent(); toast('💾 已保存并更新预览'); }
-    });
-    document.addEventListener('click', function(e) {
-        if (!deviceBtn.contains(e.target) && !deviceMenu.contains(e.target)) deviceMenu.classList.remove('show');
-        if (!addFileBtn.contains(e.target) && !addFileMenu.contains(e.target)) addFileMenu.classList.remove('show');
-    });
-    window.addEventListener('resize', function() { if (device === 'desktop') buildPreview(); });
+            // 新建文件
+            btnNewFile.addEventListener('click', () => {
+                const overlay = document.createElement('div');
+                overlay.className = 'modal-overlay';
+                overlay.innerHTML = `
+                    <div class="modal">
+                        <h3>📄 新建文件</h3>
+                        <p>输入文件名（含扩展名，如 scene.html）</p>
+                        <input type="text" id="newFileName" placeholder="例如: my-scene.html" autofocus />
+                        <div class="modal-actions">
+                            <button class="btn btn-outline" id="newCancel">取消</button>
+                            <button class="btn btn-primary" id="newConfirm">创建</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(overlay);
+                const input = overlay.querySelector('#newFileName');
+                input.focus();
+                overlay.querySelector('#newCancel').addEventListener('click', () => overlay.remove());
+                overlay.querySelector('#newConfirm').addEventListener('click', () => {
+                    const name = input.value.trim();
+                    if (!name) { showToast('请输入文件名', 'error'); return; }
+                    if (!/\.\w+$/.test(name)) { showToast('请包含扩展名，如 .html', 'error'); return; }
+                    if (addFile(name)) overlay.remove();
+                });
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') overlay.querySelector('#newConfirm').click();
+                    if (e.key === 'Escape') overlay.remove();
+                });
+                overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+            });
 
-    // 初始化
-    function init() {
-        if (Object.keys(files).length === 0) {
-            files['index.html'] = getDefaultContent('index.html');
-            files['style.css'] = getDefaultContent('style.css');
-            files['script.js'] = getDefaultContent('script.js');
-            persist();
-        }
-        updateAddedMarks();
-        renderFileList();
-        setDevice('mobile');
-        showPreview();
-    }
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-    else init();
-})();
-</script>
+            // 模板
+            btnTemplate.addEventListener('click', showTemplateMenu);
+
+            // 切换面板（折叠/展开左侧）
+            let panelCollapsed = false;
+            btnTogglePanel.addEventListener('click', () => {
+                panelCollapsed = !panelCollapsed;
+                leftPanel.classList.toggle('collapsed', panelCollapsed);
+                btnTogglePanel.textContent = panelCollapsed ? '📐 展开面板' : '📐 切换面板';
+                setTimeout(() => { updatePreview(); }, 100);
+            });
+
+            // 导出
+            btnExport.addEventListener('click', exportProject);
+
+            // 删除文件
+            btnDeleteFile.addEventListener('click', () => {
+                if (!currentFile) { showToast('请先选择一个文件', 'error'); return; }
+                if (!confirm(`确定删除 "${currentFile}" 吗？`)) return;
+                deleteFile(currentFile);
+            });
+
+            // 刷新预览
+            btnRefresh.addEventListener('click', () => { updatePreview();
+                showToast('🔄 已刷新'); });
+
+            // 自动运行切换
+            btnAutoRun.addEventListener('click', () => {
+                autoRun = !autoRun;
+                btnAutoRun.style.borderColor = autoRun ? 'var(--accent)' : 'var(--border-color)';
+                btnAutoRun.textContent = autoRun ? '▶ 自动' : '⏸ 暂停';
+                if (autoRun) updatePreview();
+                showToast(autoRun ? '▶ 自动预览已开启' : '⏸ 自动预览已暂停');
+            });
+
+            // ============================================================
+            //  9. 初始化
+            // ============================================================
+            function init() {
+                const saved = load();
+                if (saved && Object.keys(saved).length) {
+                    files = saved;
+                } else {
+                    // 默认创建三个文件
+                    files = {
+                        'index.html': getDefaultContent('index.html'),
+                        'style.css': '/* 样式 */\nbody { font-family: sans-serif; }',
+                        'script.js': '// 自定义脚本\nconsole.log("Hello 3D!");'
+                    };
+                    save();
+                }
+                renderFileList();
+                // 优先选择 index.html
+                if (files['index.html']) selectFile('index.html');
+                else {
+                    const first = Object.keys(files)[0] || null;
+                    selectFile(first);
+                }
+                // 默认自动运行
+                autoRun = true;
+                btnAutoRun.style.borderColor = 'var(--accent)';
+                btnAutoRun.textContent = '▶ 自动';
+                // 延迟刷新预览
+                setTimeout(updatePreview, 300);
+                console.log('🧊 3D Code Lab 已启动！');
+            }
+
+            // 页面加载完成后初始化
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+
+            // 窗口变化时刷新预览（防抖）
+            let resizeTimer = null;
+            window.addEventListener('resize', () => {
+                if (resizeTimer) clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    if (autoRun) updatePreview();
+                    resizeTimer = null;
+                }, 400);
+            });
+
+        })();
+    </script>
 </body>
 </html>
