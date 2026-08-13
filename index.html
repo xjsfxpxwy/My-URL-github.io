@@ -50,12 +50,12 @@
         .tool-btn{padding:8px 15px;background:#0f3460;color:white;border:none;border-radius:4px;cursor:pointer;font-size:0.9rem;}
         .tool-btn.copy{background:#238636;}
         .tool-btn.delete{background:#da3633;}
+        .tool-btn.preview{background:#6f42c1;}
         .code-editor{flex:1;padding:20px;display:flex;}
         #sourceCode{width:100%;height:100%;background:#0d1117;color:#c9d1d9;border:1px solid #30363d;border-radius:8px;padding:15px;font-family:'Consolas','Monaco',monospace;font-size:14px;line-height:1.5;resize:none;outline:none;}
         #sourceCode:focus{border-color:#4cc9f0;box-shadow:0 0 0 2px rgba(76,201,240,0.15);}
         .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%);background:#238636;color:white;padding:12px 24px;border-radius:8px;z-index:999;font-weight:600;animation:fadeInOut 2s ease forwards;pointer-events:none;}
         @keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(20px);}15%{opacity:1;transform:translateX(-50%) translateY(0);}85%{opacity:1;}100%{opacity:0;}}
-        /* 重置按钮样式 */
         .reset-btn { background: #da3633; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-left: 10px; }
         .reset-btn:hover { background: #f85149; }
     </style>
@@ -108,6 +108,7 @@
         <div class="source-toolbar">
             <button class="tool-btn copy" id="copyBtn">📋 复制</button>
             <button class="tool-btn" id="pasteBtn">📥 粘贴</button>
+            <button class="tool-btn preview" id="previewFileBtn">👁️ 预览此文件</button>
             <button class="tool-btn delete" id="deleteBtn">🗑️ 删除</button>
         </div>
         <div class="code-editor">
@@ -128,6 +129,7 @@
     var files = load();
     var currentFile = null;
     var device = 'mobile';
+    var previewFile = 'index.html'; // 当前预览的HTML文件
 
     function $(id) { return document.getElementById(id); }
     var previewPage = $('previewPage');
@@ -149,6 +151,7 @@
     var pasteBtn = $('pasteBtn');
     var deleteBtn = $('deleteBtn');
     var resetAllBtn = $('resetAllBtn');
+    var previewFileBtn = $('previewFileBtn');
     var deviceItems = document.querySelectorAll('.dropdown-item[data-device]');
     var menuOptions = document.querySelectorAll('.menu-option[data-file]');
 
@@ -230,6 +233,7 @@
     function deleteFile(fileName) {
         delete files[fileName];
         if (currentFile === fileName) currentFile = null;
+        if (previewFile === fileName) previewFile = 'index.html';
         persist();
         renderFileList();
         updateAddedMarks();
@@ -268,7 +272,6 @@
         }
     }
 
-    // 重置全部数据并刷新
     function resetAll() {
         if (confirm('确定要清空所有文件并恢复默认模板吗？此操作不可撤销。')) {
             localStorage.removeItem(STORAGE_KEY);
@@ -276,9 +279,16 @@
         }
     }
 
-    // ========== 核心：预览生成（安全拼接） ==========
+    // ========== 核心：预览生成 ==========
     function buildPreview() {
-        var htmlContent = files['index.html'] || '';
+        // 使用当前预览文件作为主HTML
+        var htmlContent = files[previewFile] || files['index.html'] || '';
+        // 如果指定的预览文件不存在且没有 index.html，则寻找第一个 HTML 文件
+        if (!htmlContent) {
+            var htmlFiles = Object.keys(files).filter(function(f) { return f.endsWith('.html') || f.endsWith('.htm'); });
+            if (htmlFiles.length > 0) htmlContent = files[htmlFiles[0]];
+        }
+
         var threeCDN = 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js';
         var needThree = false;
         var fileNames = Object.keys(files);
@@ -290,12 +300,13 @@
             }
         }
 
-        // 检查是否使用了 ES Module 或 importmap，如果是则跳过非模块 CDN 注入
+        // 检测是否使用 ES Module / importmap
         var usesModules = false;
         if (htmlContent) {
-            usesModules = /<script[^>]*type=["']module["'][^>]*>/i.test(htmlContent) || /<script[^>]*type=["']importmap["'][^>]*>/i.test(htmlContent) || /import\s+.*from\s+['"]three['"]/i.test(htmlContent);
+            usesModules = /<script[^>]*type=["']module["'][^>]*>/i.test(htmlContent) ||
+                          /<script[^>]*type=["']importmap["'][^>]*>/i.test(htmlContent) ||
+                          /import\s+.*from\s+['"]three['"]/i.test(htmlContent);
         }
-        // 同时检查其他 JS 文件是否包含 import 语句
         var allJs = Object.keys(files).filter(function(f) { return f.endsWith('.js'); });
         for (var k = 0; k < allJs.length; k++) {
             if (/import\s+.*from\s+['"]three['"]/i.test(files[allJs[k]])) {
@@ -304,7 +315,7 @@
             }
         }
 
-        // 仅当需要 Three.js 且未使用模块化导入时才注入非模块 CDN
+        // 注入非模块 CDN 仅在需要且未使用模块化时
         if (needThree && !usesModules && htmlContent && htmlContent.indexOf(threeCDN) === -1) {
             var scriptTag = '<script src="' + threeCDN + '"><\/script>';
             if (htmlContent.indexOf('</head>') !== -1) htmlContent = htmlContent.replace('</head>', scriptTag + '\n</head>');
@@ -316,10 +327,9 @@
         var cssFiles = Object.keys(files).filter(function(f) { return f.endsWith('.css'); });
         cssFiles.sort(function(a,b) { return a === 'style.css' ? -1 : b === 'style.css' ? 1 : 0; });
         var combinedCSS = '';
-        for (var k = 0; k < cssFiles.length; k++) combinedCSS += files[cssFiles[k]] + '\n';
+        for (var cIdx = 0; cIdx < cssFiles.length; cIdx++) combinedCSS += files[cssFiles[cIdx]] + '\n';
 
-        // 合并 JS（script.js 优先）—— 注意：如果使用模块化，这里仍会注入普通 script，可能与模块冲突
-        // 因此当检测到 usesModules 时，我们不再合并外部 JS 文件，而是依赖 HTML 中的 module 脚本
+        // 合并 JS（非模块模式下）
         var jsOrder = ['script.js'];
         var orderMap = {};
         for (var o = 0; o < jsOrder.length; o++) orderMap[jsOrder[o]] = o;
@@ -334,10 +344,6 @@
             for (var m = 0; m < jsFiles.length; m++) {
                 jsScripts += '<script>\n' + files[jsFiles[m]] + '\n<\/script>\n';
             }
-        } else {
-            // 模块模式下，不注入普通 script，避免冲突
-            // 但可以选择将外部 JS 文件作为 module 注入？简单起见，我们只提示用户将代码写在 HTML 中
-            console.log('检测到模块化导入，跳过外部 JS 注入');
         }
 
         // 组装最终 HTML
@@ -351,9 +357,9 @@
                 else if (/<head[^>]*>/i.test(finalHtml)) finalHtml = finalHtml.replace(/(<head[^>]*>)/i, '$1\n' + styleBlock);
                 else finalHtml = styleBlock + '\n' + finalHtml;
             }
-            // 移除可能存在的旧 script.js 引用，避免冲突
+            // 移除可能存在的旧 script.js 引用
             finalHtml = finalHtml.replace(/<script[^>]*src=["']script\.js["'][^>]*><\/script>/gi, '');
-            // 注入 JS（仅当非模块模式）
+            // 注入 JS（仅非模块模式）
             if (jsScripts.trim() && !usesModules) {
                 if (finalHtml.indexOf('</body>') !== -1) finalHtml = finalHtml.replace('</body>', jsScripts + '</body>');
                 else if (/<body[^>]*>/i.test(finalHtml)) finalHtml += '\n' + jsScripts;
@@ -375,7 +381,6 @@
     function getDefaultContent(fileName) {
         var ext = fileName.split('.').pop().toLowerCase();
         if (fileName === 'threejs-starter.html') {
-            // 3D 基础模板：自带旋转立方体（使用非模块 CDN）
             return '<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>3D 基础场景</title>\n    <style>\n        body { margin: 0; overflow: hidden; }\n        canvas { display: block; }\n    </style>\n</head>\n<body>\n    <script>\n' +
                 '        const scene = new THREE.Scene();\n' +
                 '        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);\n' +
@@ -406,92 +411,8 @@
                 '    <\/script>\n</body>\n</html>';
         }
         if (fileName === 'threejs-effectcomposer.html') {
-            // 3D 后处理模板：使用 importmap + ES Module，集成 EffectComposer
-            return `<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D 后处理场景</title>
-    <style>
-        body { margin: 0; overflow: hidden; background: #000; }
-        canvas { display: block; }
-        #info { position: absolute; top: 20px; left: 20px; color: #fff; font-family: monospace; }
-    </style>
-</head>
-<body>
-    <div id="info">Three.js + EffectComposer</div>
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"
-        }
-    }
-    </script>
-    <script type="module">
-        import * as THREE from 'three';
-        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-
-        // 场景
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0d0d1a);
-
-        // 相机
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.z = 3;
-
-        // 渲染器
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        document.body.appendChild(renderer.domElement);
-
-        // 几何体：旋转的立方体
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        const material = new THREE.MeshStandardMaterial({ color: 0x4cc9f0, roughness: 0.3, metalness: 0.1 });
-        const cube = new THREE.Mesh(geometry, material);
-        scene.add(cube);
-
-        // 灯光
-        const dirLight = new THREE.DirectionalLight(0xffffff, 1);
-        dirLight.position.set(1, 2, 1);
-        scene.add(dirLight);
-        scene.add(new THREE.AmbientLight(0x404040));
-
-        // EffectComposer
-        const composer = new EffectComposer(renderer);
-        const renderPass = new RenderPass(scene, camera);
-        composer.addPass(renderPass);
-
-        // 添加泛光效果
-        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.5, 0.4, 0.85);
-        bloomPass.threshold = 0.1;
-        bloomPass.strength = 0.8;
-        bloomPass.radius = 0.5;
-        composer.addPass(bloomPass);
-
-        // 动画循环
-        function animate() {
-            requestAnimationFrame(animate);
-            cube.rotation.x += 0.01;
-            cube.rotation.y += 0.01;
-            composer.render();
-        }
-        animate();
-
-        // 窗口大小调整
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            composer.setSize(window.innerWidth, window.innerHeight);
-        });
-    </script>
-</body>
-</html>`;
+            // 注意：所有 </script> 已转义为 <\/script>，防止提前终止外层脚本
+            return '<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n    <meta charset="UTF-8">\n    <meta name="viewport" content="width=device-width, initial-scale=1.0">\n    <title>3D 后处理场景</title>\n    <style>\n        body { margin: 0; overflow: hidden; background: #000; }\n        canvas { display: block; }\n        #info { position: absolute; top: 20px; left: 20px; color: #fff; font-family: monospace; }\n    </style>\n</head>\n<body>\n    <div id="info">Three.js + EffectComposer</div>\n    <script type="importmap">\n    {\n        "imports": {\n            "three": "https://cdn.jsdelivr.net/npm/three@0.163.0/build/three.module.js",\n            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.163.0/examples/jsm/"\n        }\n    }\n    <\/script>\n    <script type="module">\n        import * as THREE from \'three\';\n        import { EffectComposer } from \'three/addons/postprocessing/EffectComposer.js\';\n        import { RenderPass } from \'three/addons/postprocessing/RenderPass.js\';\n        import { UnrealBloomPass } from \'three/addons/postprocessing/UnrealBloomPass.js\';\n\n        const scene = new THREE.Scene();\n        scene.background = new THREE.Color(0x0d0d1a);\n\n        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);\n        camera.position.z = 3;\n\n        const renderer = new THREE.WebGLRenderer({ antialias: true });\n        renderer.setSize(window.innerWidth, window.innerHeight);\n        renderer.setPixelRatio(window.devicePixelRatio);\n        document.body.appendChild(renderer.domElement);\n\n        const geometry = new THREE.BoxGeometry(1, 1, 1);\n        const material = new THREE.MeshStandardMaterial({ color: 0x4cc9f0, roughness: 0.3, metalness: 0.1 });\n        const cube = new THREE.Mesh(geometry, material);\n        scene.add(cube);\n\n        const dirLight = new THREE.DirectionalLight(0xffffff, 1);\n        dirLight.position.set(1, 2, 1);\n        scene.add(dirLight);\n        scene.add(new THREE.AmbientLight(0x404040));\n\n        const composer = new EffectComposer(renderer);\n        const renderPass = new RenderPass(scene, camera);\n        composer.addPass(renderPass);\n\n        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.5, 0.4, 0.85);\n        bloomPass.threshold = 0.1;\n        bloomPass.strength = 0.8;\n        bloomPass.radius = 0.5;\n        composer.addPass(bloomPass);\n\n        function animate() {\n            requestAnimationFrame(animate);\n            cube.rotation.x += 0.01;\n            cube.rotation.y += 0.01;\n            composer.render();\n        }\n        animate();\n\n        window.addEventListener(\'resize\', () => {\n            camera.aspect = window.innerWidth / window.innerHeight;\n            camera.updateProjectionMatrix();\n            renderer.setSize(window.innerWidth, window.innerHeight);\n            composer.setSize(window.innerWidth, window.innerHeight);\n        });\n    <\/script>\n</body>\n</html>';
         }
         if (ext === 'html') {
             return '<!DOCTYPE html>\n<html lang="zh-CN">\n<head><meta charset="UTF-8"><title>我的网页</title></head>\n<body>\n  <h1>欢迎</h1>\n  <button id="myButton">点击我</button>\n</body>\n</html>';
@@ -545,6 +466,13 @@
     deleteBtn.addEventListener('click', function() {
         if (!currentFile) { toast('没有选中文件'); return; }
         if (confirm('确定删除 ' + currentFile + ' ？')) { deleteFile(currentFile); showDir(); toast('已删除: ' + currentFile); }
+    });
+    previewFileBtn.addEventListener('click', function() {
+        if (!currentFile) { toast('没有选中文件'); return; }
+        if (!/\.(html?|htm)$/i.test(currentFile)) { toast('请选择 HTML 文件进行预览'); return; }
+        previewFile = currentFile;
+        toast('正在预览: ' + previewFile);
+        showPreview();
     });
     sourceCode.addEventListener('input', syncCurrent);
     sourceCode.addEventListener('keydown', function(e) {
